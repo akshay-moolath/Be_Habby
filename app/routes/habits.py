@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Path
 from sqlmodel import Session, select
-from typing import List
+from fastapi import Query
+from sqlalchemy import desc as sql_desc, asc as sql_asc
+from typing import List, Optional
 from ..db import engine
 from ..models import Habit, User
 from ..auth_utils import create_access_token
@@ -32,12 +34,46 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
             raise HTTPException(status_code=401, detail="User not found")
         return user
 
-
+ALLOWED_SORT_FIELDS = {"id", "name", "status", "category", "created_at", "updated_at"}
 @router.get("/", response_model=List[Habit])
-def list_habits(current_user: User = Depends(get_current_user)):
+def list_habits(
+    status: Optional[str] = Query(None, description="Filter by status, e.g. active/completed"),
+    category: Optional[str] = Query(None, description="Filter by category, e.g. health/work"),
+    search: Optional[str] = Query(None, description="Search in habit name"),
+    sort: Optional[str] = Query("created_at", description="Sort field (id,name,status,category,created_at,updated_at)"),
+    order: Optional[str] = Query("desc", description="'asc' or 'desc'"),
+    page: int = Query(1, ge=1, description="Page number (1-based)"),
+    limit: int = Query(10, ge=1, le=100, description="Items per page"),
+    current_user: User = Depends(get_current_user),
+):
+    if sort not in ALLOWED_SORT_FIELDS:
+        raise HTTPException(status_code=400, detail=f"Invalid sort field. Allowed: {sorted(ALLOWED_SORT_FIELDS)}")
+
+    # Build base statement
     with Session(engine) as session:
         statement = select(Habit).where(Habit.owner_id == current_user.id)
-        return session.exec(statement).all()
+
+        if status:
+            statement = statement.where(Habit.status == status)
+        if category:
+            statement = statement.where(Habit.category == category)
+        if search:
+            statement = statement.where(Habit.name.ilike(f"%{search}%"))
+
+        # Resolve column and order
+        column = getattr(Habit, sort)
+        if order and order.lower() == "asc":
+            statement = statement.order_by(sql_asc(column))
+        else:
+            # default desc
+            statement = statement.order_by(sql_desc(column))
+
+        # Pagination
+        offset = (page - 1) * limit
+        statement = statement.offset(offset).limit(limit)
+
+        results = session.exec(statement).all()
+        return results
 
 
 @router.post("/", response_model=Habit)
