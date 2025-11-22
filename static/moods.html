@@ -1,141 +1,332 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Smart Habits — Moods</title>
-  <style>
-    :root{--accent:#2563eb;--muted:#6b7280;--card:#ffffff;--bg:#f7fafc}
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);font-family:Inter, system-ui, sans-serif;color:#0f172a}
-    .container{max-width:1000px;margin:28px auto;padding:16px}
-    header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-    .brand{display:flex;align-items:center;gap:12px}
-    .brand img{height:56px}
-    h1{margin:0;font-size:1.4rem}
-    .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 8px 30px rgba(12,18,30,0.06);margin-top:18px}
-
-    .row{display:flex;gap:12px}
-    .col{flex:1}
-    label{display:block;margin-top:8px;font-weight:600}
-    input,textarea,select,button{width:100%;padding:10px;border-radius:10px;border:1px solid #e6edf3;margin-top:8px}
-    textarea{resize:vertical}
-    .btn{background:var(--accent);color:white;border:none;padding:10px;border-radius:10px;cursor:pointer;font-weight:700}
-    .muted{color:var(--muted)}
-    ul.list{list-style:none;padding:0;margin:0}
-    ul.list li{padding:12px;border-bottom:1px solid #eef2f7;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-    .meta{color:var(--muted);font-size:0.9rem}
-    .controls{display:flex;gap:8px;align-items:center}
-    .small{font-size:0.9rem}
-
-    @media (max-width:880px){.row{flex-direction:column}}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BeHabby: Mood Tracker</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .card {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease-in-out;
+        }
+        .gradient-text {
+            background: linear-gradient(90deg, #60a5fa, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        /* Styles for sentiment indicators */
+        .sentiment-positive { color: #10b981; } /* Green */
+        .sentiment-negative { color: #ef4444; } /* Red */
+        .sentiment-neutral { color: #6b7280; } /* Gray */
+    </style>
 </head>
-<body>
-  <div class="container">
-    <header>
-      <div class="brand">
+<body class="antialiased text-gray-800 min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-md">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-extrabold gradient-text">BeHabby</h1>
+            <div class="flex items-center space-x-4">
+                <a href="/static/habits.html" class="text-sm font-semibold text-gray-600 hover:text-indigo-600 transition duration-150">Habits</a>
+                <button id="nav-logout" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container px-4 sm:px-6 lg:px-8 py-10">
+
+        <header class="mb-10 text-center">
+            <h2 class="text-4xl font-bold text-gray-900 mb-2">Daily Mood Tracker</h2>
+            <p class="text-gray-500">Log your feelings and view automated sentiment analysis.</p>
+        </header>
+
+        <!-- Main Grid Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Mood Logging Card -->
+            <section class="lg:col-span-1 card bg-white p-6 rounded-xl border border-gray-200 h-fit">
+                <h3 class="text-xl font-semibold mb-4 text-indigo-600">Add New Mood Entry</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="m-text" class="block text-sm font-medium text-gray-700 mb-1">How are you feeling?</label>
+                        <textarea id="m-text" rows="3" placeholder="I felt great after meditating this morning." class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 resize-none"></textarea>
+                    </div>
+                    <div>
+                        <label for="m-habit" class="block text-sm font-medium text-gray-700 mb-1">Attach to Habit (ID)</label>
+                        <input id="m-habit" type="number" placeholder="Habit ID (optional)" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="m-date" class="block text-sm font-medium text-gray-700 mb-1">Date & Time (Optional)</label>
+                        <input id="m-date" type="datetime-local" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    
+                    <button id="btn-create-mood" onclick="createMood()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 rounded-lg shadow-md transition duration-150 flex items-center justify-center space-x-2">
+                        <span>Save Mood</span>
+                    </button>
+                </div>
+                <p id="create-error-message" class="text-sm text-red-500 mt-2 hidden">Error: Could not save mood.</p>
+            </section>
+
+            <!-- Mood History Card (Takes 2/3 width on large screens) -->
+            <section class="lg:col-span-2 card bg-white p-6 rounded-xl border border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold text-teal-600">Recent Moods History</h3>
+                    <div class="flex space-x-3 items-center">
+                        <select id="filter-habit" class="p-2 border border-gray-300 rounded-lg text-sm">
+                            <option value="">All habits</option>
+                        </select>
+                        <button id="btn-refresh" onclick="loadMoods()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg shadow-sm transition duration-150">
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+                
+                <ul id="mood-list" class="divide-y divide-gray-100">
+                    <!-- Moods will be loaded here by JavaScript -->
+                    <li class="p-4 text-center text-gray-400">Loading moods...</li>
+                </ul>
+                <div id="mood-list-empty" class="hidden text-center text-gray-500 p-8">
+                    <p>No mood entries found.</p>
+                </div>
+            </section>
+        </div>
+
+    </div>
+
+    <!-- Script using standard fetch for FastAPI -->
+    <script>
+        // Set the base URL for the API (if needed, otherwise relative is fine)
+        const API_URL = ''; 
+
+        // Check for authentication token and redirect if missing
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/static/login.html';
+        }
+
+        /**
+         * Generates the header object with Content-Type and Authorization token (if available).
+         * This ensures the Content-Type is always present for consistent API interaction.
+         */
+        function header() {
+            const t = localStorage.getItem('token');
+            const headers = { 'Content-Type': 'application/json' };
+            if (t) {
+                headers['Authorization'] = 'Bearer ' + t;
+            }
+            return headers;
+        }
+
+        // Logout handler (clears token and redirects)
+        document.getElementById('nav-logout').onclick = () => {
+            localStorage.removeItem('token');
+            window.location.href = '/static/login.html';
+        };
+
+        /**
+         * Utility function to escape HTML for safe display
+         */
+        function escapeHtml(unsafe){ 
+            return unsafe.replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#039;" })[c] || c);
+        }
+
+        /**
+         * Renders the list of moods fetched from the API.
+         * @param {Array} moods - Array of mood objects from FastAPI.
+         */
+        function renderMoods(moods) {
+            const ul = document.getElementById('mood-list');
+            const emptyState = document.getElementById('mood-list-empty');
+            ul.innerHTML = '';
+
+            if (moods.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            // Sort by creation date descending
+            moods.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            moods.forEach(m => {
+                // FIX: Ensure m.sentiment is a string before calling .toLowerCase()
+                const rawSentiment = m.sentiment || ''; // Default to empty string if null/undefined
+                const sentiment = (typeof rawSentiment === 'string') ? rawSentiment.toLowerCase() : 'neutral';
+                
+                let sentimentClass = 'sentiment-neutral';
+                let sentimentLabel = 'N/A';
+                
+                if (sentiment === 'positive') {
+                    sentimentClass = 'sentiment-positive';
+                    sentimentLabel = 'Positive';
+                } else if (sentiment === 'negative') {
+                    sentimentClass = 'sentiment-negative';
+                    sentimentLabel = 'Negative';
+                } else {
+                    sentimentLabel = 'Neutral/Unknown';
+                }
+
+                const displayDate = new Date(m.created_at).toLocaleString();
+
+                ul.innerHTML += `
+                    <li class="flex items-start justify-between py-3 border-b border-gray-100 hover:bg-gray-50 transition duration-100 px-2 rounded-lg">
+                        <div class="flex-1 mr-4">
+                            <p class="text-sm text-gray-800 font-medium mb-1">${escapeHtml(m.text)}</p>
+                            <p class="text-xs text-gray-500">
+                                Logged: ${displayDate} 
+                                ${m.habit_id ? ` • Habit ID: ${m.habit_id}` : ''}
+                            </p>
+                        </div>
+                        <div class="flex flex-col items-end">
+                            <span class="text-sm font-bold ${sentimentClass}">${sentimentLabel}</span>
+                            <span class="text-xs text-gray-400 mt-1">Mood ID: ${m.id}</span>
+                        </div>
+                    </li>
+                `;
+            });
+        }
+
+        /**
+         * Fetches all moods from the FastAPI endpoint.
+         */
+        window.loadMoods = async function() {
+            const habitFilter = document.getElementById('filter-habit').value;
+            const q = habitFilter ? `?habit_id=${habitFilter}` : '';
+            const ul = document.getElementById('mood-list');
+            ul.innerHTML = '<li class="p-4 text-center text-gray-400">Loading moods...</li>';
+
+            try {
+                // Use the consistent header() function
+                const res = await fetch(API_URL + '/moods' + q, { headers: header() });
+                
+                if (!res.ok) {
+                    const errorBody = await res.text().catch(() => 'No response body');
+                    console.error(`🔴 API Error: Failed to fetch moods. Status: ${res.status}`);
+                    console.error("Server Response:", errorBody);
+
+                    if (res.status === 401 || res.status === 403) {
+                        console.warn("Unauthorized/Forbidden: Redirecting to login.");
+                        localStorage.removeItem('token');
+                        window.location.href = '/static/login.html';
+                        return;
+                    }
+                    // Throw error to be caught below and display user message
+                    throw new Error(`Failed to fetch moods: HTTP ${res.status}`);
+                }
+
+                const data = await res.json();
+                renderMoods(data);
+
+            } catch (error) {
+                console.error("🛑 Network/Unknown Error during loadMoods:", error);
+                ul.innerHTML = `<li class="p-4 text-center text-red-500">Connection error: Could not load moods. Please check the console (F12) for detailed network/server error messages.</li>`;
+            }
+        }
+
+        /**
+         * Creates a new mood entry (POST /moods).
+         */
+        window.createMood = async function() {
+            const text = document.getElementById('m-text').value.trim();
+            const habit_id = document.getElementById('m-habit').value.trim();
+            const dt = document.getElementById('m-date').value;
+            const errorMessageEl = document.getElementById('create-error-message');
+            errorMessageEl.classList.add('hidden');
+
+            if (!text) {
+                console.warn('Mood text cannot be empty.');
+                errorMessageEl.textContent = 'Mood text is required.';
+                errorMessageEl.classList.remove('hidden');
+                return;
+            }
+
+            const body = { text };
+            // Ensure habit_id is an integer if provided
+            if (habit_id) body.habit_id = parseInt(habit_id);
+            // Convert datetime-local to ISO string if provided
+            if (dt) body.created_at = new Date(dt).toISOString();
+
+            try {
+                const res = await fetch(API_URL + '/moods', {
+                    method: 'POST',
+                    // Use the consistent header() function
+                    headers: header(),
+                    body: JSON.stringify(body)
+                });
+
+                if (!res.ok) {
+                    const errorBody = await res.json().catch(() => ({ detail: 'Unknown error' }));
+                    console.error(`🔴 API Error: Failed to create mood. Status: ${res.status}`);
+                    console.error("Server Response:", errorBody);
+                    errorMessageEl.textContent = `Error saving: ${errorBody.detail || 'Check console for details.'}`;
+                    errorMessageEl.classList.remove('hidden');
+                    return; 
+                }
+                
+                // Clear inputs
+                document.getElementById('m-text').value = ''; 
+                document.getElementById('m-habit').value = ''; 
+                document.getElementById('m-date').value = '';
+                errorMessageEl.classList.add('hidden');
+
+
+                // Reload data
+                await loadMoods();
+            } catch (error) {
+                console.error("🛑 Network/Unknown Error during createMood:", error);
+                errorMessageEl.textContent = 'Network error during save.';
+                errorMessageEl.classList.remove('hidden');
+            }
+        }
         
-        <div>
-          <h1>Moods Tracker</h1>
-          <div class="muted small">Log moods and see recent sentiment</div>
-        </div>
-      </div>
-      <div class="controls">
-        <button id="btn-habits" class="btn" style="background:#ef4444">Habits</button>
-        <button id="logout" class="btn" style="background:#475569">Logout</button>
-      </div>
-    </header>
+        /**
+         * Loads habits into the filter dropdown.
+         */
+        async function loadHabitsIntoFilter(){
+            try {
+                // Use the consistent header() function
+                const res = await fetch(API_URL + '/habits', { headers: header() });
+                if (!res.ok) {
+                    console.error(`🔴 API Error: Could not load habits for filter. Status: ${res.status}`);
+                    return;
+                }
+                const data = await res.json();
+                const sel = document.getElementById('filter-habit');
+                sel.innerHTML = '<option value="">All habits</option>';
+                data.forEach(h => { 
+                    const o = document.createElement('option'); 
+                    o.value = h.id; 
+                    o.text = `${h.name} (ID: ${h.id})`; 
+                    sel.appendChild(o); 
+                });
+            } catch (error) {
+                console.error("🛑 Network/Unknown Error fetching habits for filter:", error);
+            }
+        }
 
-    <section class="card" aria-labelledby="log-mood">
-      <h2 id="log-mood">Add a Mood</h2>
-      <div class="row">
-        <div class="col">
-          <label for="m-text">How are you feeling? (text)</label>
-          <textarea id="m-text" rows="3" placeholder="I felt good after my run..."></textarea>
-        </div>
-        <div style="width:180px">
-          <label for="m-habit">Attach to Habit (optional)</label>
-          <input id="m-habit" placeholder="habit id" />
+        // Event listeners
+        document.getElementById('filter-habit').onchange = loadMoods;
 
-          <label for="m-date">Date (optional)</label>
-          <input id="m-date" type="datetime-local" />
+        // Initialization function to run on page load
+        (async () => { 
+            await loadHabitsIntoFilter(); 
+            await loadMoods(); 
+        })();
 
-          <button id="btn-create-mood" class="btn" style="margin-top:12px">Save Mood</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <h2 style="margin:0">Recent Moods</h2>
-        <div class="controls">
-          <select id="filter-habit"><option value="">All habits</option></select>
-          <button id="btn-refresh" class="btn" style="background:#10b981">Refresh</button>
-        </div>
-      </div>
-
-      <ul id="mood-list" class="list"></ul>
-    </section>
-
-  </div>
-
-  <script>
-    // Auth guard — redirect to login if no token
-    if(!localStorage.getItem('token')){
-      window.location.href = '/static/login.html';
-    }
-
-    function authHeader(){ const t = localStorage.getItem('token'); return t? { 'Authorization':'Bearer '+t } : {} }
-
-    document.getElementById('btn-habits').onclick = ()=> window.location.href = '/static/habits.html'
-    document.getElementById('logout').onclick = ()=>{ localStorage.removeItem('token'); window.location.href='/static/login.html' }
-
-    async function loadHabitsIntoFilter(){
-      const res = await fetch('/habits',{ headers:{ ...authHeader() } });
-      if(!res.ok) return;
-      const data = await res.json();
-      const sel = document.getElementById('filter-habit');
-      sel.innerHTML = '<option value="">All habits</option>';
-      data.forEach(h => { const o = document.createElement('option'); o.value = h.id; o.text = `${h.name} (id:${h.id})`; sel.appendChild(o) });
-    }
-
-    async function createMood(){
-      const text = document.getElementById('m-text').value.trim();
-      const habit_id = document.getElementById('m-habit').value.trim();
-      const dt = document.getElementById('m-date').value;
-      if(!text) return alert('Please enter mood text');
-      const body = { text };
-      if(habit_id) body.habit_id = Number(habit_id);
-      if(dt) body.created_at = new Date(dt).toISOString();
-      const res = await fetch('/moods',{ method:'POST', headers:{'Content-Type':'application/json', ...authHeader()}, body:JSON.stringify(body) });
-      if(!res.ok){ const e=await res.json().catch(()=>null); return alert(e?.detail||'Failed to create'); }
-      document.getElementById('m-text').value=''; document.getElementById('m-habit').value=''; document.getElementById('m-date').value='';
-      await loadMoods();
-    }
-
-    async function loadMoods(){
-      const habitFilter = document.getElementById('filter-habit').value;
-      const q = habitFilter ? `?habit_id=${habitFilter}` : '';
-      const res = await fetch('/moods'+q, { headers:{ ...authHeader() } });
-      if(!res.ok){ if(res.status===401){ localStorage.removeItem('token'); window.location.href='/static/login.html' } return }
-      const list = await res.json();
-      const ul = document.getElementById('mood-list'); ul.innerHTML='';
-      list.forEach(m => {
-        const li = document.createElement('li');
-        li.innerHTML = `<div style="flex:1"><div><strong>${escapeHtml(m.text)}</strong></div><div class="meta">habit: ${m.habit_id||'-'} • sentiment: ${m.sentiment ?? '-'} • ${new Date(m.created_at).toLocaleString()}</div></div>`;
-        ul.appendChild(li);
-      });
-    }
-
-    function escapeHtml(unsafe){ return unsafe.replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#039;" })[c]) }
-
-    document.getElementById('btn-create-mood').onclick = createMood;
-    document.getElementById('btn-refresh').onclick = loadMoods;
-    document.getElementById('filter-habit').onchange = loadMoods;
-
-    // init
-    (async ()=>{ await loadHabitsIntoFilter(); await loadMoods(); })();
-  </script>
+    </script>
 </body>
 </html>

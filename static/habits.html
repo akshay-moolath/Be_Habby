@@ -1,263 +1,420 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Smart Habits — Manage Habits</title>
-
-  <style>
-    body {
-      font-family: Inter, system-ui, sans-serif;
-      background: #f1f5f9;
-      margin: 0;
-      padding: 0;
-    }
-
-    /* Centered container */
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 24px;
-      box-sizing: border-box;
-    }
-
-    header {
-      position: relative;
-      width: 100%;
-      margin-bottom: 20px;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 1.8rem;
-    }
-
-    /* Moods + Logout buttons */
-    .controls {
-      position: absolute;
-      top: 0;
-      right: 0;
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .controls .btn-small {
-      padding: 8px 14px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 0.9rem;
-      color: white;
-    }
-
-    .btn-moods { background: #ef4444; }
-    .btn-logout { background: #475569; }
-
-    .card {
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.06);
-      margin-top: 22px;
-    }
-
-    label {
-      display: block;
-      margin-top: 10px;
-      font-weight: 500;
-    }
-
-    input, select {
-      width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #d1d5db;
-      margin-top: 6px;
-    }
-
-    button {
-      padding: 10px 16px;
-      margin-top: 12px;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      background: #2563eb;
-      color: #fff;
-    }
-
-    button:hover { background: #1d4ed8; }
-
-    .danger { background: #dc2626; }
-    .danger:hover { background: #b91c1c; }
-
-    ul.habit-list {
-      list-style: none;
-      padding: 0;
-    }
-
-    ul.habit-list li {
-      padding: 12px;
-      border-bottom: 1px solid #e2e8f0;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BeHabby: Habit Manager</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .card {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease-in-out;
+        }
+        .card:hover {
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+        }
+        .gradient-text {
+            background: linear-gradient(90deg, #60a5fa, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        /* Style for the habit list item */
+        .habit-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .habit-item:last-child {
+            border-bottom: none;
+        }
+        .status-completed {
+            color: #10b981; /* green-500 */
+        }
+        .status-active {
+            color: #3b82f6; /* blue-500 */
+        }
+        /* Smooth scrolling for anchor links */
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
 </head>
+<body class="antialiased text-gray-800 min-h-screen">
 
-<body>
+    <!-- Navbar -->
+    <nav class="bg-white shadow-md sticky top-0 z-10">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-extrabold gradient-text">BeHabby</h1>
+            <div class="flex items-center space-x-4">
+                <a href="/static/moods.html" class="text-sm font-semibold text-gray-600 hover:text-indigo-600 transition duration-150">Moods</a>
+                
+                <!-- This link now scrolls to the #about-us section -->
+                <a href="#about-us" class="text-sm font-semibold text-gray-600 hover:text-indigo-600 transition duration-150">About Us</a>
+                
+                <button id="nav-logout" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </nav>
 
-<div class="container">
+    <div class="container px-4 sm:px-6 lg:px-8 py-10">
 
-  <header>
-    <h1>Manage Your Habits</h1>
+        <header class="mb-10 text-center">
+            <h2 class="text-4xl font-bold text-gray-900 mb-2">Manage Your Daily Habits</h2>
+            <p class="text-gray-500">Connects to your FastAPI backend for persistent habit tracking.</p>
+        </header>
 
-    <div class="controls">
-      <button id="btn-moods" class="btn-small btn-moods">Moods</button>
-      <button id="logout" class="btn-small btn-logout">Logout</button>
+        <!-- Main Grid Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Habit Creation Card -->
+            <section class="lg:col-span-1 card bg-white p-6 rounded-xl border border-gray-200 h-fit">
+                <h3 class="text-xl font-semibold mb-4 text-indigo-600">Add New Habit</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="new-name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                        <input id="new-name" type="text" placeholder="e.g., Read 30 minutes" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="new-category" class="block text-sm font-medium text-gray-700 mb-1">Category (Optional)</label>
+                        <input id="new-category" type="text" placeholder="e.g., Wellness" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <button id="add-habit-btn" onclick="createHabit()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 rounded-lg shadow-md transition duration-150 flex items-center justify-center space-x-2">
+                        <span>Create Habit</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Habit List Card (Takes 2/3 width on large screens) -->
+            <section class="lg:col-span-2 card bg-white p-6 rounded-xl border border-gray-200">
+                <h3 class="text-xl font-semibold mb-4 text-teal-600">Your Current Habits</h3>
+                <ul id="habit-list" class="divide-y divide-gray-100">
+                    <!-- Habits will be loaded here by JavaScript -->
+                    <li class="p-4 text-center text-gray-400">Loading habits...</li>
+                </ul>
+                <div id="habit-list-empty" class="hidden text-center text-gray-500 p-8">
+                    <p>You haven't added any habits yet. Start tracking your first goal!</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- Utility Cards (Update and Delete) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+            <!-- Update Habit Card -->
+            <section class="card bg-white p-6 rounded-xl border border-gray-200">
+                <h3 class="text-xl font-semibold mb-4 text-blue-600">Update Existing Habit</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label for="put-id" class="block text-sm font-medium text-gray-700 mb-1">Habit ID (Copy from list)</label>
+                        <input id="put-id" type="text" placeholder="Habit ID" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="put-name" class="block text-sm font-medium text-gray-700 mb-1">New Name</label>
+                        <input id="put-name" type="text" placeholder="New name (optional)" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="put-status" class="block text-sm font-medium text-gray-700 mb-1">New Status</label>
+                        <select id="put-status" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="put-category" class="block text-sm font-medium text-gray-700 mb-1">New Category</label>
+                        <input id="put-category" type="text" placeholder="New category (optional)" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <button onclick="putHabit()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg shadow-md transition duration-150">
+                        Update Habit
+                    </button>
+                </div>
+            </section>
+            
+            <!-- Delete Habit Card -->
+            <section class="card bg-white p-6 rounded-xl border border-gray-200">
+                <h3 class="text-xl font-semibold mb-4 text-red-600">Delete Habit</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label for="delete-id" class="block text-sm font-medium text-gray-700 mb-1">Habit ID to Delete</label>
+                        <input id="delete-id" type="text" placeholder="Habit ID" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500">
+                    </div>
+                    <button onclick="deleteHabit()" class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 rounded-lg shadow-md transition duration-150">
+                        Permanently Delete Habit
+                    </button>
+                </div>
+
+                <!-- Simple Status Patch Card (Combined with Delete for space) -->
+                <h3 class="text-xl font-semibold mb-4 mt-8 text-green-600">Quick Status Change</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label for="patch-id" class="block text-sm font-medium text-gray-700 mb-1">Habit ID</label>
+                        <input id="patch-id" type="text" placeholder="Habit ID" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                    </div>
+                    <div>
+                        <label for="patch-status" class="block text-sm font-medium text-gray-700 mb-1">New Status</label>
+                        <select id="patch-status" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                    <button onclick="patchHabit()" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg shadow-md transition duration-150">
+                        Change Status
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <!-- ABOUT US SECTION -->
+        <section id="about-us" class="card bg-white p-6 rounded-xl border border-gray-200 mt-12">
+            <h3 class="text-2xl font-bold mb-4 text-gray-800 border-b pb-2">About BeHabby</h3>
+            <p class="text-gray-600">
+                BeHabby is designed to simplify your habit tracking and mood logging. 
+                Our goal is to provide a clean interface that connects seamlessly with a backend API, 
+                allowing you to focus on building positive habits and maintaining your well-being. 
+                Start tracking today and achieve your goals!
+            </p>
+        </section>
+
     </div>
-  </header>
 
-  <section class="card">
-    <h2>Add Habit</h2>
-    <label>Name</label>
-    <input id="new-name" placeholder="Habit name" />
+    <!-- Script using standard fetch for FastAPI -->
+    <script>
+        // Check for authentication token and redirect if missing
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/static/login.html';
+        }
 
-    <label>Category</label>
-    <input id="new-category" placeholder="Category (optional)" />
+        /**
+         * Generates the header object with the Authorization token.
+         */
+        function header() {
+            const t = localStorage.getItem('token');
+            return t
+                ? { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' }
+                : { 'Content-Type': 'application/json' };
+        }
 
-    <button onclick="createHabit()">Add Habit</button>
-  </section>
+        // Logout handler (clears token and redirects)
+        document.getElementById('nav-logout').onclick = () => {
+            localStorage.removeItem('token');
+            window.location.href = '/static/login.html';
+        };
 
-  <section class="card">
-    <h2>All Habits</h2>
-    <ul id="habit-list" class="habit-list"></ul>
-  </section>
+        /**
+         * Renders the list of habits fetched from the API.
+         * @param {Array} habits - Array of habit objects from FastAPI.
+         */
+        function renderHabits(habits) {
+            const ul = document.getElementById('habit-list');
+            const emptyState = document.getElementById('habit-list-empty');
+            ul.innerHTML = '';
 
-  <section class="card">
-    <h2>Update Your Habits</h2>
-    <label>Habit ID</label>
-    <input id="put-id" />
+            if (habits.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
 
-    <label>New Name</label>
-    <input id="put-name" />
+            // Sort habits by ID or another field if your FastAPI returns them unsorted
+            // habits.sort((a, b) => a.id - b.id); 
 
-    <label>New Status</label>
-    <select id="put-status">
-      <option value="active">active</option>
-      <option value="completed">completed</option>
-    </select>
+            habits.forEach(h => {
+                const statusClass = h.status === 'completed' ? 'status-completed' : 'status-active';
+                const statusText = h.status.charAt(0).toUpperCase() + h.status.slice(1);
+                
+                // Assuming habits have 'id', 'name', 'category', and 'status' fields
+                ul.innerHTML += `
+                    <li class="habit-item hover:bg-gray-50 transition duration-100 px-2 rounded-lg">
+                        <div class="flex-grow">
+                            <strong class="text-lg text-gray-800">${h.name}</strong>
+                            <span class="ml-3 text-sm text-gray-400">(${h.category || 'No Category'})</span>
+                            <p class="text-xs text-gray-500 mt-0.5">ID: ${h.id}</p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <span class="font-semibold text-sm ${statusClass}">${statusText}</span>
+                        </div>
+                    </li>
+                `;
+            });
+        }
 
-    <label>New Category</label>
-    <input id="put-category" />
+        /**
+         * Fetches all habits from the FastAPI endpoint.
+         */
+        async function loadHabits() {
+            try {
+                const res = await fetch('/habits', { headers: header() });
+                
+                if (!res.ok) {
+                    throw new Error(`Failed to fetch habits: ${res.status}`);
+                }
 
-    <button onclick="putHabit()">Update Habit</button>
-  </section>
+                const data = await res.json();
+                renderHabits(data);
 
-  <section class="card">
-    <h2>Change Status</h2>
-    <label>Habit ID</label>
-    <input id="patch-id" />
+            } catch (error) {
+                console.error("Error loading habits:", error);
+                document.getElementById('habit-list').innerHTML = `<li class="p-4 text-center text-red-500">Connection error: Could not load habits.</li>`;
+            }
+        }
 
-    <label>Status</label>
-    <select id="patch-status">
-      <option value="active">active</option>
-      <option value="completed">completed</option>
-    </select>
+        /**
+         * Creates a new habit (POST /habits).
+         */
+        window.createHabit = async function() {
+            const name = document.getElementById('new-name').value.trim();
+            const category = document.getElementById('new-category').value.trim();
 
-    <button onclick="patchHabit()">Patch Status</button>
-  </section>
+            if (!name) {
+                console.error("Habit name cannot be empty!");
+                return;
+            }
 
-  <section class="card">
-    <h2>Delete Habit</h2>
-    <label>Habit ID</label>
-    <input id="delete-id" />
+            try {
+                const res = await fetch('/habits', {
+                    method: 'POST',
+                    headers: header(),
+                    body: JSON.stringify({ name, category: category || '' })
+                });
 
-    <button class="danger" onclick="deleteHabit()">Delete Habit</button>
-  </section>
+                if (!res.ok) {
+                    throw new Error(`Failed to create habit: ${res.status}`);
+                }
+                
+                // Clear inputs
+                document.getElementById('new-name').value = '';
+                document.getElementById('new-category').value = '';
+                
+                loadHabits(); // Reload list after successful creation
+            } catch (error) {
+                console.error("Error creating habit:", error);
+            }
+        }
 
-</div> <!-- end container -->
+        /**
+         * Updates a habit completely (PUT /habits/{id}).
+         */
+        window.putHabit = async function() {
+            const id = document.getElementById('put-id').value.trim();
+            const name = document.getElementById('put-name').value.trim();
+            const status = document.getElementById('put-status').value;
+            const category = document.getElementById('put-category').value.trim();
 
-<script>
-  const API = '';
+            if (!id) {
+                console.error("Habit ID is required for update.");
+                return;
+            }
 
-  if (!localStorage.getItem('token')) {
-    window.location.href = '/static/login.html';
-  }
+            try {
+                const res = await fetch(`/habits/${id}`, {
+                    method: 'PUT',
+                    headers: header(),
+                    body: JSON.stringify({ 
+                        name: name || undefined, 
+                        status: status, 
+                        category: category || '' 
+                    })
+                });
 
-  document.getElementById('btn-moods').onclick = () => {
-    window.location.href = '/static/moods.html';
-  };
+                if (!res.ok) {
+                    throw new Error(`Failed to update habit: ${res.status}`);
+                }
+                
+                // Clear inputs
+                document.getElementById('put-id').value = '';
+                document.getElementById('put-name').value = '';
+                document.getElementById('put-category').value = '';
 
-  document.getElementById('logout').onclick = () => {
-    localStorage.removeItem('token');
-    window.location.href = '/static/login.html';
-  };
+                loadHabits();
+            } catch (error) {
+                console.error("Error updating habit:", error);
+            }
+        }
 
-  function header() {
-    const t = localStorage.getItem('token');
-    return t
-      ? { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/json' }
-      : { 'Content-Type': 'application/json' };
-  }
+        /**
+         * Changes a habit's status (PATCH /habits/{id}).
+         */
+        window.patchHabit = async function() {
+            const id = document.getElementById('patch-id').value.trim();
+            const status = document.getElementById('patch-status').value;
 
-  async function loadHabits() {
-    const res = await fetch('/habits', { headers: header() });
-    const data = await res.json();
-    const ul = document.getElementById('habit-list');
-    ul.innerHTML = '';
-    data.forEach(h => {
-      ul.innerHTML += `<li><strong>${h.name}</strong> (${h.category || 'none'}) — status: ${h.status} — id: ${h.id}</li>`;
-    });
-  }
+            if (!id) {
+                console.error("Habit ID is required for status change.");
+                return;
+            }
 
-  async function createHabit() {
-    const name = document.getElementById('new-name').value;
-    const category = document.getElementById('new-category').value;
-    await fetch('/habits', {
-      method: 'POST',
-      headers: header(),
-      body: JSON.stringify({ name, category })
-    });
-    loadHabits();
-  }
+            try {
+                const res = await fetch(`/habits/${id}`, {
+                    method: 'PATCH',
+                    headers: header(),
+                    body: JSON.stringify({ status })
+                });
 
-  async function putHabit() {
-    const id = document.getElementById('put-id').value;
-    const name = document.getElementById('put-name').value;
-    const status = document.getElementById('put-status').value;
-    const category = document.getElementById('put-category').value;
-    await fetch(`/habits/${id}`, {
-      method: 'PUT',
-      headers: header(),
-      body: JSON.stringify({ name, status, category })
-    });
-    loadHabits();
-  }
+                if (!res.ok) {
+                    throw new Error(`Failed to patch status: ${res.status}`);
+                }
+                
+                // Clear input
+                document.getElementById('patch-id').value = '';
 
-  async function patchHabit() {
-    const id = document.getElementById('patch-id').value;
-    const status = document.getElementById('patch-status').value;
-    await fetch(`/habits/${id}`, {
-      method: 'PATCH',
-      headers: header(),
-      body: JSON.stringify({ status })
-    });
-    loadHabits();
-  }
+                loadHabits();
+            } catch (error) {
+                console.error("Error patching habit status:", error);
+            }
+        }
 
-  async function deleteHabit() {
-    const id = document.getElementById('delete-id').value;
-    await fetch(`/habits/${id}`, {
-      method: 'DELETE',
-      headers: header()
-    });
-    loadHabits();
-  }
+        /**
+         * Deletes a habit (DELETE /habits/{id}).
+         */
+        window.deleteHabit = async function() {
+            const id = document.getElementById('delete-id').value.trim();
+            
+            if (!id) {
+                console.error("Habit ID is required for deletion.");
+                return;
+            }
+            
+            // Replaced window.confirm() with console error/warning as per safety instructions.
+            // A custom modal would be needed for a proper confirmation UI.
+            console.warn(`Attempting to delete Habit ID: ${id}. This action is immediate.`);
 
-  loadHabits();
-</script>
+
+            try {
+                const res = await fetch(`/habits/${id}`, {
+                    method: 'DELETE',
+                    headers: header()
+                });
+
+                if (!res.ok) {
+                    throw new Error(`Failed to delete habit: ${res.status}`);
+                }
+                
+                // Clear input
+                document.getElementById('delete-id').value = '';
+                
+                loadHabits();
+            } catch (error) {
+                console.error("Error deleting habit:", error);
+            }
+        }
+
+        // Initial load of habits when the page loads
+        loadHabits();
+    </script>
 
 </body>
 </html>
