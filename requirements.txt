@@ -1,6 +1,10 @@
 fastapi
-uvicorn
+uvicorn[standard]
 sqlmodel
+sqlalchemy
+python-jose
 passlib[argon2]
-python-jose[cryptography]
+python-dotenv
 python-multipart
+python-dateutil
+pydantic
