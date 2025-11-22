@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Smart Habits — Manage Habits</title>
+  <style>
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      background: #f1f5f9;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    .card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+      margin-top: 20px;
+    }
+    label {
+      display:block;
+      margin-top:10px;
+      font-weight:500;
+    }
+    input, select {
+      width:100%;
+      padding:10px;
+      border-radius:8px;
+      border:1px solid #d1d5db;
+      margin-top:6px;
+    }
+    button {
+      padding:10px 16px;
+      margin-top:12px;
+      border:none;
+      border-radius:8px;
+      font-size:1rem;
+      font-weight:600;
+      cursor:pointer;
+      background:#2563eb;
+      color:#fff;
+    }
+    button:hover { background:#1d4ed8; }
+    .danger { background:#dc2626; }
+    .danger:hover { background:#b91c1c; }
+
+    ul.habit-list { list-style:none; padding:0; }
+    ul.habit-list li {
+      padding:12px;
+      border-bottom:1px solid #e2e8f0;
+    }
+    .row { display:flex; gap:10px; }
+    .row > * { flex:1; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Manage Your Habits</h1>
+    <button id="logout"
+    style="float:right;background:#475569;color:#fff;border:none;padding:8px 14px;
+    border-radius:8px;cursor:pointer;margin-top:-40px;">
+    Logout
+  </button>
+
+    
+
+    <section class="card">
+      <h2>Add Habit</h2>
+      <label>Name</label>
+      <input id="new-name" placeholder="Habit name" />
+
+      <label>Category</label>
+      <input id="new-category" placeholder="Category (optional)" />
+
+      <button onclick="createHabit()">Add Habit</button>
+    </section>
+
+    <section class="card">
+      <h2>All Habits</h2>
+      <ul id="habit-list" class="habit-list"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Update Your Habits</h2>
+      <label>Habit ID</label>
+      <input id="put-id" />
+
+      <label>New Name</label>
+      <input id="put-name" />
+
+      <label>New Status</label>
+      <select id="put-status">
+        <option value="active">active</option>
+        <option value="completed">completed</option>
+      </select>
+
+      <label>New Category</label>
+      <input id="put-category" />
+
+      <button onclick="putHabit()">Update Habit</button>
+    </section>
+
+    <section class="card">
+      <h2>Change Status </h2>
+      <label>Habit ID</label>
+      <input id="patch-id" />
+
+      <label>Status</label>
+      <select id="patch-status">
+        <option value="active">active</option>
+        <option value="completed">completed</option>
+      </select>
+
+      <button onclick="patchHabit()">Patch Status</button>
+    </section>
+
+    <section class="card">
+      <h2>Delete Habit</h2>
+      <label>Habit ID</label>
+      <input id="delete-id" />
+
+      <button class="danger" onclick="deleteHabit()">Delete Habit</button>
+    </section>
+  </div>
+
+  <script>
+    const API = '';
+
+    if (!localStorage.getItem('token')) {
+      window.location.href = '/static/login.html';
+    }
+    document.getElementById('logout').onclick = () => {
+      localStorage.removeItem('token');
+      window.location.href = '/static/login.html';
+    };
+
+    function header(){
+      const t = localStorage.getItem('token');
+      return t ? { 'Authorization': 'Bearer '+t, 'Content-Type':'application/json'} : {'Content-Type':'application/json'};
+    }
+
+    async function loadHabits(){
+      const res = await fetch('/habits',{headers:header()});
+      const data = await res.json();
+      const ul = document.getElementById('habit-list');
+      ul.innerHTML = '';
+      data.forEach(h => {
+        ul.innerHTML += `<li><strong>${h.name}</strong> (${h.category||'none'}) — status: ${h.status} — id: ${h.id}</li>`;
+      });
+    }
+
+    async function createHabit(){
+      const name = document.getElementById('new-name').value;
+      const category = document.getElementById('new-category').value;
+      await fetch('/habits',{
+        method:'POST',
+        headers:header(),
+        body:JSON.stringify({name,category})
+      });
+      loadHabits();
+    }
+
+    async function putHabit(){
+      const id = document.getElementById('put-id').value;
+      const name = document.getElementById('put-name').value;
+      const status = document.getElementById('put-status').value;
+      const category = document.getElementById('put-category').value;
+      await fetch(`/habits/${id}`,{
+        method:'PUT',
+        headers:header(),
+        body:JSON.stringify({name, status, category})
+      });
+      loadHabits();
+    }
+
+    async function patchHabit(){
+      const id = document.getElementById('patch-id').value;
+      const status = document.getElementById('patch-status').value;
+      await fetch(`/habits/${id}`,{
+        method:'PATCH',
+        headers:header(),
+        body:JSON.stringify({status})
+      });
+      loadHabits();
+    }
+
+    async function deleteHabit(){
+      const id = document.getElementById('delete-id').value;
+      await fetch(`/habits/${id}`,{
+        method:'DELETE',
+        headers:header()
+      });
+      loadHabits();
+    }
+
+    loadHabits();
+  </script>
+</body>
+</html>

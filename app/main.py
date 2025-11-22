@@ -24,6 +24,6 @@ app.include_router(moods.router)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/", include_in_schema=False)
 def root():
-    return FileResponse(os.path.join("static", "index.html"))
+    return FileResponse(os.path.join("static", "login.html"))
 
 

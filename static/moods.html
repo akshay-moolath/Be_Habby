@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Smart Habits — Moods</title>
+  <style>
+    :root{--accent:#2563eb;--muted:#6b7280;--card:#ffffff;--bg:#f7fafc}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);font-family:Inter, system-ui, sans-serif;color:#0f172a}
+    .container{max-width:1000px;margin:28px auto;padding:16px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand img{height:56px}
+    h1{margin:0;font-size:1.4rem}
+    .card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 8px 30px rgba(12,18,30,0.06);margin-top:18px}
+
+    .row{display:flex;gap:12px}
+    .col{flex:1}
+    label{display:block;margin-top:8px;font-weight:600}
+    input,textarea,select,button{width:100%;padding:10px;border-radius:10px;border:1px solid #e6edf3;margin-top:8px}
+    textarea{resize:vertical}
+    .btn{background:var(--accent);color:white;border:none;padding:10px;border-radius:10px;cursor:pointer;font-weight:700}
+    .muted{color:var(--muted)}
+    ul.list{list-style:none;padding:0;margin:0}
+    ul.list li{padding:12px;border-bottom:1px solid #eef2f7;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+    .meta{color:var(--muted);font-size:0.9rem}
+    .controls{display:flex;gap:8px;align-items:center}
+    .small{font-size:0.9rem}
+
+    @media (max-width:880px){.row{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <img src="/mnt/data/Screenshot 2025-11-22 143104.png" alt="logo" />
+        <div>
+          <h1>Smart Habits — Moods</h1>
+          <div class="muted small">Log moods and see recent sentiment</div>
+        </div>
+      </div>
+      <div class="controls">
+        <button id="btn-habits" class="btn" style="background:#475569">Habits</button>
+        <button id="logout" class="btn" style="background:#ef4444">Logout</button>
+      </div>
+    </header>
+
+    <section class="card" aria-labelledby="log-mood">
+      <h2 id="log-mood">Log a Mood</h2>
+      <div class="row">
+        <div class="col">
+          <label for="m-text">How are you feeling? (text)</label>
+          <textarea id="m-text" rows="3" placeholder="I felt good after my run..."></textarea>
+        </div>
+        <div style="width:180px">
+          <label for="m-habit">Attach to Habit (optional)</label>
+          <input id="m-habit" placeholder="habit id" />
+
+          <label for="m-date">Date (optional)</label>
+          <input id="m-date" type="datetime-local" />
+
+          <button id="btn-create-mood" class="btn" style="margin-top:12px">Save Mood</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2 style="margin:0">Recent Moods</h2>
+        <div class="controls">
+          <select id="filter-habit"><option value="">All habits</option></select>
+          <button id="btn-refresh" class="btn" style="background:#10b981">Refresh</button>
+        </div>
+      </div>
+
+      <ul id="mood-list" class="list"></ul>
+    </section>
+
+  </div>
+
+  <script>
+    // Auth guard — redirect to login if no token
+    if(!localStorage.getItem('token')){
+      window.location.href = '/static/login.html';
+    }
+
+    function authHeader(){ const t = localStorage.getItem('token'); return t? { 'Authorization':'Bearer '+t } : {} }
+
+    document.getElementById('btn-habits').onclick = ()=> window.location.href = '/static/habits.html'
+    document.getElementById('logout').onclick = ()=>{ localStorage.removeItem('token'); window.location.href='/static/login.html' }
+
+    async function loadHabitsIntoFilter(){
+      const res = await fetch('/habits',{ headers:{ ...authHeader() } });
+      if(!res.ok) return;
+      const data = await res.json();
+      const sel = document.getElementById('filter-habit');
+      sel.innerHTML = '<option value="">All habits</option>';
+      data.forEach(h => { const o = document.createElement('option'); o.value = h.id; o.text = `${h.name} (id:${h.id})`; sel.appendChild(o) });
+    }
+
+    async function createMood(){
+      const text = document.getElementById('m-text').value.trim();
+      const habit_id = document.getElementById('m-habit').value.trim();
+      const dt = document.getElementById('m-date').value;
+      if(!text) return alert('Please enter mood text');
+      const body = { text };
+      if(habit_id) body.habit_id = Number(habit_id);
+      if(dt) body.created_at = new Date(dt).toISOString();
+      const res = await fetch('/moods',{ method:'POST', headers:{'Content-Type':'application/json', ...authHeader()}, body:JSON.stringify(body) });
+      if(!res.ok){ const e=await res.json().catch(()=>null); return alert(e?.detail||'Failed to create'); }
+      document.getElementById('m-text').value=''; document.getElementById('m-habit').value=''; document.getElementById('m-date').value='';
+      await loadMoods();
+    }
+
+    async function loadMoods(){
+      const habitFilter = document.getElementById('filter-habit').value;
+      const q = habitFilter ? `?habit_id=${habitFilter}` : '';
+      const res = await fetch('/moods'+q, { headers:{ ...authHeader() } });
+      if(!res.ok){ if(res.status===401){ localStorage.removeItem('token'); window.location.href='/static/login.html' } return }
+      const list = await res.json();
+      const ul = document.getElementById('mood-list'); ul.innerHTML='';
+      list.forEach(m => {
+        const li = document.createElement('li');
+        li.innerHTML = `<div style="flex:1"><div><strong>${escapeHtml(m.text)}</strong></div><div class="meta">habit: ${m.habit_id||'-'} • sentiment: ${m.sentiment ?? '-'} • ${new Date(m.created_at).toLocaleString()}</div></div>`;
+        ul.appendChild(li);
+      });
+    }
+
+    function escapeHtml(unsafe){ return unsafe.replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#039;" })[c]) }
+
+    document.getElementById('btn-create-mood').onclick = createMood;
+    document.getElementById('btn-refresh').onclick = loadMoods;
+    document.getElementById('filter-habit').onchange = loadMoods;
+
+    // init
+    (async ()=>{ await loadHabitsIntoFilter(); await loadMoods(); })();
+  </script>
+</body>
+</html>

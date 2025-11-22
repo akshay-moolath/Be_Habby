@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Smart Habits — Login</title>
+  <style>
+    :root{
+      --accent:#2563eb;
+      --muted:#6b7280;
+      --dark:#0f172a;
+      --card-bg: #ffffff;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      background:#f7fafc;
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;
+      color:var(--dark);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .wrap {
+      width:100%;
+      max-width:420px;
+      padding:28px;
+    }
+
+    /* center logo above the card, overlapping */
+    .logo-wrap{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      margin-bottom: -36px; /* lift logo to overlap card */
+      z-index:2;
+    }
+    .logo{
+      width:180px;
+      height:auto;
+      display:block;
+    }
+
+    .card{
+      background:var(--card-bg);
+      border-radius:16px;
+      padding:48px 28px 28px 28px;
+      box-shadow: 0 20px 50px rgba(12,18,30,0.08);
+      position:relative;
+      overflow:visible;
+    }
+
+    h1{
+      display:block;
+      text-align:center;
+      margin:0 0 8px 0;
+      font-size:22px;
+      font-weight:800;
+      color:var(--dark);
+    }
+
+    label{
+      display:block;
+      margin-top:16px;
+      font-weight:600;
+      color:var(--dark);
+      font-size:0.95rem;
+    }
+
+    input{
+      width:100%;
+      padding:12px 14px;
+      margin-top:8px;
+      border-radius:10px;
+      border:1px solid #e6edf3;
+      font-size:1rem;
+      outline:none;
+      background:#fff;
+    }
+
+    .btn{
+      width:100%;
+      padding:12px;
+      margin-top:20px;
+      border-radius:10px;
+      border:none;
+      background:var(--accent);
+      color:white;
+      font-weight:700;
+      font-size:1rem;
+      cursor:pointer;
+    }
+
+    .btn.secondary{
+      background:#475569;
+      margin-top:12px;
+    }
+
+    .muted{
+      text-align:center;
+      margin-top:16px;
+      color:var(--accent);
+      font-size:0.95rem;
+    }
+
+    /* small screens */
+    @media (max-width:420px){
+      .wrap{padding:18px}
+      .logo{width:150px}
+      .card{padding:40px 18px 18px 18px}
+    }
+  </style>
+</head>
+<body>
+
+    <div class="card" role="main" aria-labelledby="login-title">
+      <h1 id="login-title">BeHabby</h1>
+
+      <label for="username">Username</label>
+      <input id="username" name="username" placeholder="Enter username" autocomplete="username" />
+
+      <label for="password">Password</label>
+      <input id="password" type="password" name="password" placeholder="Enter password" autocomplete="current-password" />
+
+      <button id="btn-login" class="btn">Login</button>
+      <button id="btn-register" class="btn secondary">Register</button>
+
+      
+  </div>
+
+  <script>
+    async function doLogin(u,p){
+      const fd = new URLSearchParams(); fd.append('username',u); fd.append('password',p);
+      const res = await fetch('/auth/login',{ method:'POST', body:fd });
+      if(!res.ok) return null;
+      const j = await res.json();
+      return j.access_token;
+    }
+
+    function setToken(t){ if(t) localStorage.setItem('token', t); else localStorage.removeItem('token'); }
+
+    document.getElementById('btn-login').onclick = async () => {
+      const u = document.getElementById('username').value.trim();
+      const p = document.getElementById('password').value;
+      if(!u || !p) return alert('Enter username and password');
+      const token = await doLogin(u,p);
+      if(!token) return alert('Login failed');
+      setToken(token);
+      window.location.href = '/static/habits.html';
+    };
+
+    document.getElementById('btn-register').onclick = async () => {
+      const u = document.getElementById('username').value.trim();
+      const p = document.getElementById('password').value;
+      if(!u || !p) return alert('Enter username and password');
+      const res = await fetch('/auth/register', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ username: u, password: p })
+      });
+      if(!res.ok){
+        const err = await res.json().catch(()=>null);
+        return alert(err?.detail || 'Registration failed');
+      }
+      const token = await doLogin(u,p);
+      if(!token) return alert('Auto-login failed');
+      setToken(token);
+      window.location.href = '/static/habits.html';
+    };
+  </script>
+</body>
+</html>
