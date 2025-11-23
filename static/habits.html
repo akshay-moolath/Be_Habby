@@ -129,13 +129,6 @@
                         <input id="put-name" type="text" placeholder="New name (optional)" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div>
-                        <label for="put-status" class="block text-sm font-medium text-gray-700 mb-1">New Status</label>
-                        <select id="put-status" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                            <option value="active">Active</option>
-                            <option value="completed">Completed</option>
-                        </select>
-                    </div>
-                    <div>
                         <label for="put-category" class="block text-sm font-medium text-gray-700 mb-1">New Category</label>
                         <input id="put-category" type="text" placeholder="New category (optional)" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
                     </div>
@@ -310,41 +303,61 @@
          * Updates a habit completely (PUT /habits/{id}).
          */
         window.putHabit = async function() {
-            const id = document.getElementById('put-id').value.trim();
-            const name = document.getElementById('put-name').value.trim();
-            const status = document.getElementById('put-status').value;
-            const category = document.getElementById('put-category').value.trim();
+    const id = document.getElementById('put-id').value.trim();
+    const name = document.getElementById('put-name').value.trim();
+    const category = document.getElementById('put-category').value.trim();
 
-            if (!id) {
-                console.error("Habit ID is required for update.");
-                return;
-            }
+    if (!id) {
+        console.error("Habit ID is required for update.");
+        return;
+    }
 
-            try {
-                const res = await fetch(`/habits/${id}`, {
-                    method: 'PUT',
-                    headers: header(),
-                    body: JSON.stringify({ 
-                        name: name || undefined, 
-                        status: status, 
-                        category: category || '' 
-                    })
-                });
+    // 🚀 FIX 1: Create a data object to build the payload
+    const data = {};
 
-                if (!res.ok) {
-                    throw new Error(`Failed to update habit: ${res.status}`);
-                }
-                
-                // Clear inputs
-                document.getElementById('put-id').value = '';
-                document.getElementById('put-name').value = '';
-                document.getElementById('put-category').value = '';
+    // 🚀 FIX 2: Only add the field if the input is NOT empty.
+    // If we skip an empty field, the backend knows to ignore it (due to HabitUpdate schema)
+    if (name) {
+        data.name = name;
+    }
 
-                loadHabits();
-            } catch (error) {
-                console.error("Error updating habit:", error);
-            }
+    if (category) {
+        data.category = category;
+    } 
+    // If the user wants to clear the category, they would need to explicitly send category: null, 
+    // but for simple updates, we assume empty input means "don't change."
+
+    // Check if any data was actually provided for the update
+    if (Object.keys(data).length === 0) {
+        console.log("No data provided for update. Skipping API call.");
+        return;
+    }
+
+    try {
+        const res = await fetch(`/habits/${id}`, {
+            method: 'PUT',
+            headers: header(),
+            // 🚀 FIX 3: Send the dynamically built 'data' object
+            body: JSON.stringify(data) 
+        });
+
+        if (!res.ok) {
+            // Include response text for better debugging
+            const errorBody = await res.json(); 
+            console.error("API Error Response:", errorBody);
+            throw new Error(`Failed to update habit: ${res.status} - ${errorBody.detail || 'Unknown Error'}`);
         }
+        
+        // Clear inputs
+        document.getElementById('put-id').value = '';
+        document.getElementById('put-name').value = '';
+        document.getElementById('put-category').value = '';
+
+        loadHabits();
+    } catch (error) {
+        console.error("Error updating habit:", error);
+    }
+}
 
         /**
          * Changes a habit's status (PATCH /habits/{id}).

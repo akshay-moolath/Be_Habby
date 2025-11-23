@@ -11,10 +11,19 @@ class UserCreate(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    
+# Schema for CREATING a new habit (name is mandatory)
 class HabitCreate(BaseModel):
     name: str
     status: Optional[str] = "active"
     category: Optional[str] = None
+
+# 🚀 FIX: Schema for UPDATING an existing habit (ALL fields are optional)
+class HabitUpdate(BaseModel):
+    name: Optional[str] = None
+    status: Optional[str] = None
+    category: Optional[str] = None
+
 
 class MoodCreate(BaseModel):
     text: str
